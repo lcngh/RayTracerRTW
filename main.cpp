@@ -102,7 +102,7 @@ color ray_color(const ray& r, const hittable& world, int depth) {
         //point3 target = rec.p + rec.normal + random_in_unit_sphere();
 		/* updated with random_in_hemisphere() function */
         //point3 target = rec.p + rec.normal + random_unit_vector();
-		//point3 target = rec.p + rec.normal + //random_in_hemisphere();
+		//point3 target = rec.p + rec.normal + random_in_hemisphere();
 		
         ray scattered;
         color attenuation;
@@ -138,7 +138,7 @@ int main()
     hittable_list world;
     
     auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
-    auto material_center = make_shared<metal>(color(0.7, 0.3, 0.3), 0.0);
+    auto material_center = make_shared<lambertian>(color(0.7, 0.3, 0.3));
     auto material_left   = make_shared<metal>(color(0.8, 0.8, 0.8), 0.3);
     auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 1.0);
     
