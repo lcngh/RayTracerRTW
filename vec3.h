@@ -248,6 +248,14 @@ vec3 reflect(const vec3& v, const vec3& n) {
     return v - 2*dot(v,n)*n;
 }
 
+/*function that returns a vec3 representing a refracted ray*/
+vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat) {
+    auto cos_theta = fmin(dot(-uv, n), 1.0);
+    vec3 r_out_perp = etai_over_etat * (uv + cos_theta*n);
+    vec3 r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
+    return r_out_perp + r_out_parallel;
+}
+
 #endif
 
 /*
@@ -369,4 +377,41 @@ inline functions
 		hemisphere distribution, independent of angle from normal
 			uniform scatter all angles away from hit point
 
+*/
+
+/*WDIL 6AUG2023
+    refractions are described by Snell's law
+        eta * sin(theta) = eta' * sin(theta')
+        theta = angles from the normal
+        eta = refractive indices
+
+    refractive index describes how refractions react with a material
+        typically, air has a refractive index of 1.0
+            glass has 1.3-1.7
+            diamond 2.4
+            etc ...
+
+    to find the direction of our refracted ray, we need to find sin(theta')
+        sin(theta') = (eta / eta') * sin(theta)
+    
+    looking at the refracted side of the surface, there is a refracted ray R' and a normal n'
+        there exists an angle, theta', between them
+        to solve for R', we can split it into R'-parallel and R'-perpendicular
+            these parts make up the whole R' ray
+            parallel and perpendicular to n' is what we are referring to
+        solving for R'-perpendicular:
+            R'-perpendicular = (eta / eta')*(R + cos(theta)*n)
+        solving for R'-parallel
+            R'-parallel = -sqrt(1 - abs(R'-perpendicular)^2 * n)
+        
+    for the above solutions, there is an issue: we need to solve for cos(theta) now too
+        but, we can use knowledge of dot products to help. the dot product of two vectors can be explained in terms of the cos of the angle between them
+            a . b = abs(a)*abs(b)*cos(theta)
+            we can simplify further by restricting a and b to unit vectors (aka, they are 1)
+            a . b = cos(theta)
+    
+    now we can write
+        R'-perpendicular = (eta / eta') * (R + (-R . n) * m)
+
+    all the above knowledge accumulates to form our vec3::refract() function
 */
