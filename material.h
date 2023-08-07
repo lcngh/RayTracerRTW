@@ -87,14 +87,38 @@ class dielectric : public material {
             double refraction_ratio = rec.front_face ? (1.0 / ir) : ir;
 
             vec3 unit_direction = unit_vector(r_in.direction());
-            vec3 refracted = refract(unit_direction, rec.normal, refraction_ratio);
+            //vec3 refracted = refract(unit_direction, rec.normal, refraction_ratio);
+            //scattered = ray(rec.p, refracted);
+            
+            double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
+            double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
 
-            scattered = ray(rec.p, refracted);
+            bool cannot_refract = refraction_ratio * sin_theta > 1.0;
+            vec3 direction;
+
+            if (cannot_refract || reflectance(cos_theta, refraction_ratio) > random_double()) {
+                direction = reflect(unit_direction, rec.normal);
+            } else {
+                direction = refract(unit_direction, rec.normal, refraction_ratio);
+            }
+
+            scattered = ray(rec.p, direction);
             return true;
+            /*at this point attenuation is always 1
+                therefore, the glass surface absorbs nothing
+            */
         }
 
     public:
         double ir;
+    
+    private:
+        static double reflectance(double cosine, double ref_idx) {
+            // Schlick's approximation for reflectance
+            auto r0 = (1 - ref_idx) / (1 + ref_idx);
+            r0 = r0*r0;
+            return r0 + (1 - r0) * pow((1 - cosine), 5);
+        }
 };
 
 #endif
@@ -115,4 +139,11 @@ class dielectric : public material {
 /* WDIL 22JUL23 
     fuzzy shiny reflection
         if we want a reflection to look fuzzy, the destination of the ray after reflection must be randomized. we can achieve this by adding some calculation to our scattered ray's construction arguments. if we take the 'reflected' variable, and add the product of a new 'fuzz' parameter and a 'random_in_unit_sphere()' ray, then the destination will be random within a sphere of radius 'fuzz'. fuzz of 0 will be normal shiny.
+*/
+
+/*WDIL 6AUG23
+    when you look at glass (or anything) at an angle, its reflectance varies
+    in this implementation, we use schlick's approximation for this effect
+    according to shirley, this polynomial equation is surprisingly accurate
+
 */

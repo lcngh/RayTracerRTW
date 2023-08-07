@@ -256,6 +256,18 @@ vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat) {
     return r_out_perp + r_out_parallel;
 }
 
+/*function that generates a random point in a disk around lookat point of camera
+    for defocus blur
+    aperture
+*/
+vec3 random_in_unit_disk() {
+    while(true) {
+        auto p = vec3(random_double(-1,1), random_double(-1,1), 0);
+        if (p.length_squared() >= 1) continue;
+        return p;
+    }
+}
+
 #endif
 
 /*
@@ -414,4 +426,30 @@ inline functions
         R'-perpendicular = (eta / eta') * (R + (-R . n) * m)
 
     all the above knowledge accumulates to form our vec3::refract() function
+
+    there is an issue with the above implementation. if a ray is inside a material with a higher reflective index than previous, there is no solution to Snell's law
+
+        sin(theta') = (eta / eta')*sin(theta)
+            say a ray is in glass sphere, air is outside
+        sin(theta') (1.5/1.0)*sin(theta)
+            the value of sin(theta') cannot > 1, so if
+        (1.5/1.0)*sin(theta) > 1.0
+            then the inequality is broken, soln. cannot exist
+    
+    in other words
+        if (refraction_ratio * sin_theta > 1.0) {
+            // ray must reflect
+            ...
+        } else {
+            // ray CAN refract
+            ...
+        }
+        shirley notes that in the above logic, all the light is reflected "and because in practice that is usually inside solid objects, it is called 'total internal reflection'. This is why sometimes the water-air boundary acts as a perfect mirror while you are submerged."
+        it is unclear if we are making this decision to happen across all dielectrics like this or if this phenomena happens naturally with all dielectrics
+
+    we can solve for sin(theta) using trig qualities
+        sin(theta) = sqrt(1 - cos(theta)^2)
+            and
+        cos(theta) = R . n
+
 */
